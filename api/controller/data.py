@@ -1,5 +1,5 @@
 from flask_restx import Namespace, Resource, fields
-from api.models.data import db, Datas
+from api.service.data import get_all_data, add_data, get_data_by_id, delete_data_by_id
 from flask import request
 
 rest_api = Namespace("data", description="Data related operations")
@@ -23,7 +23,7 @@ class Items(Resource):
     """
     def get(self):
 
-        items = Datas.query.all()
+        items = get_all_data()
         
         return {"success" : True,
                 "msg"     : "Items found ("+ str(len( items ))+")",
@@ -41,11 +41,7 @@ class Items(Resource):
         # Get the information    
         item_data = req_data.get("data")
 
-        # Create new object
-        new_item = Datas(data=item_data)
-
-        # Save the data
-        new_item.save()
+        new_item = add_data(item_data)
         
         return {"success": True,
                 "msg"    : "Item successfully created ["+ str(new_item.id)+"]"}, 200
@@ -58,7 +54,7 @@ class ItemManager(Resource):
     """
     def get(self, id):
 
-        item = Datas.get_by_id(id)
+        item = get_data_by_id(id)
 
         if not item:
             return {"success": False,
@@ -74,7 +70,7 @@ class ItemManager(Resource):
     @rest_api.expect(update_model, validate=True)
     def put(self, id):
 
-        item = Datas.get_by_id(id)
+        item = get_data_by_id(id)
 
         # Read ALL input from body  
         req_data = request.get_json()
@@ -99,15 +95,13 @@ class ItemManager(Resource):
     def delete(self, id):
 
         # Locate the Item
-        item = Datas.get_by_id(id)
+        item = get_data_by_id(id)
 
         if not item:
             return {"success": False,
                     "msg": "Item not found."}, 400
 
-        # Delete and save the change
-        Datas.query.filter_by(id=id).delete()
-        db.session.commit()
+        delete_data_by_id(id)
 
         return {"success" : True,
                 "msg"     : "Item [" +str(id)+ "] successfully deleted"}, 200   
